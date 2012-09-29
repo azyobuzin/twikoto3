@@ -7,7 +7,7 @@ from twikoto3 import twitter
 from twikoto3.extension import *
 
 class InputPinDialog(QtGui.QDialog):
-    def __init__(self, uri, parent = None):
+    def __init__(self, uri, okaction, parent = None):
         super(InputPinDialog, self).__init__(parent)
 
         self.layout = QtGui.QVBoxLayout()
@@ -29,6 +29,7 @@ class InputPinDialog(QtGui.QDialog):
         self.layout_buttons = QtGui.QHBoxLayout()
 
         self.button_ok = QtGui.QPushButton("OK")
+        self.button_ok.clicked.connect(lambda: okaction(self, self.lineedit_pin.text()))
         self.layout_buttons.addWidget(self.button_ok)
 
         self.button_cancel = QtGui.QPushButton("Cancel")
@@ -41,18 +42,24 @@ class InputPinDialog(QtGui.QDialog):
         self.setWindowTitle("Twitter 認証")
         self.setWhatsThis("Twitterにログインして、ついこと 3 のアクセスを許可してください。")
 
-requesttoken_reply = none
-requesttoken = None
-
 def authorize():
-    requesttoken_reply = twikoto3.twitter.getrequesttoken()
-    requesttoken_reply.finished.connect(requesttoken_callback)
-    requesttoken_reply.error.connect(requesttoken_error)
-
-def requesttoken_callback():
-    requesttoken = twitter.OAuthToken.parse(requesttoken_reply.readAll())
-    dialog = InputPinDialog("https://api.twitter.com/oauth/authorize?oauth_token=" + requesttoken.token)
+    requesttoken = twikoto3.twitter.getrequesttoken()
+    dialog = InputPinDialog("https://api.twitter.com/oauth/authorize?oauth_token=" + requesttoken.token, inputedpin)
     dialog.show()
 
-def requesttoken_error(error):
-    pass
+def inputedpin(dialog, verifier):
+    if verifier | noneoremptystr():
+        return
+
+    try:
+        accesstoken = twikoto3.twitter.getaccesstoken(verifier)
+
+        twikoto3.setting.oauthtoken = accesstoken.token
+        twikoto3.setting.oauthtokensecret = accesstoken.secret
+        twikoto3.setting.userid = accesstoken.userid
+        twikoto3.setting.screenname = accesstoken.screenname
+        twikoto3.setting.savesetting()
+
+        dialog.close()
+    except Exception as ex:
+        QtGui.QMessageBox.critical(dialog, "認証失敗", str(ex))

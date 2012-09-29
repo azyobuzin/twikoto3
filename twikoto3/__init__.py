@@ -13,6 +13,8 @@ class Setting:
         #初期値設定
         self.oauthtoken = None
         self.oauthtokensecret = None
+        self.userid = None
+        self.screenname = None
 
     def authorized(self):
         return not (self.oauthtoken | noneoremptystr() or self.oauthtokensecret | noneoremptystr())
