@@ -18,9 +18,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import os
 import pickle
 import sys
-from PyQt4 import QtCore, QtGui, QtNetwork
+from PyQt4 import QtCore, QtGui
 from twikoto3 import authorization, twitter
 from twikoto3.extension import *
 
@@ -50,6 +51,7 @@ class Setting:
 
 def main():
     app = QtGui.QApplication(sys.argv)
+    app.setWindowIcon(QtGui.QIcon(os.path.join("res", "icon.png")))
 
     if not setting.authorized():
         authorization.authorize()
