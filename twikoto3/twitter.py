@@ -31,10 +31,6 @@ class Twitter:
     def addoauthheader(self, req, method, callback, verifier, params):
         req.add_header("Authorization", oauth.createauthorizationheader(method, req.full_url, None, self.consumerkey, self.consumersecret, self.oauthtoken, self.oauthtokensecret, oauth.HMACSHA1, callback, verifier, params))
 
-    def createmanager(self):
-        #TODO:プロキシ対応など
-        return QtNetwork.QNetworkAccessManager()
-
     #OAuth
     def getrequesttoken(self, callback = "oob"):
         req = urllib.request.Request("https://api.twitter.com/oauth/request_token")
@@ -51,6 +47,16 @@ class Twitter:
         self.oauthtoken = token.token
         self.oauthtokensecret = token.secret
         return token
+
+    #Tweets
+    def updatestatus(self, status, inreplytostatusid = -1):
+        params = { "status": status }
+        if inreplytostatusid > -1:
+            params["in_reply_to_status_id"] = str(inreplytostatusid)
+        req = urllib.request.Request("https://api.twitter.com/1.1/statuses/update.json", data = oauth.towwwformurlencoded(params).encode("ascii"))
+        self.addoauthheader(req, "POST", None, None, params)
+        urllib.request.urlopen(req).close()
+        #TODO:パース
 
 class OAuthToken:
     def __init__(self, token, secret):

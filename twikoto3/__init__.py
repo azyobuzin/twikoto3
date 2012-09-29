@@ -22,7 +22,7 @@ import os
 import pickle
 import sys
 from PyQt4 import QtCore, QtGui
-from twikoto3 import authorization, twitter
+from twikoto3 import authorization, mainwindow, twitter
 from twikoto3.extension import *
 
 class Setting:
@@ -55,6 +55,8 @@ def main():
 
     if not setting.authorized():
         authorization.authorize()
+    else:
+        mainwindow.MainWindow.getinstance().show()
 
     resultcode = app.exec_()
 

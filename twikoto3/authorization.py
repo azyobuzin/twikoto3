@@ -21,7 +21,7 @@
 import urllib.request
 from PyQt4 import QtCore, QtGui, QtNetwork
 import twikoto3
-from twikoto3 import twitter
+from twikoto3 import mainwindow, twitter
 from twikoto3.extension import *
 
 class InputPinDialog(QtGui.QDialog):
@@ -78,6 +78,7 @@ def inputedpin(dialog, verifier):
         twikoto3.setting.screenname = accesstoken.screenname
         twikoto3.setting.savesetting()
 
+        mainwindow.MainWindow.getinstance().show()
         dialog.close()
     except Exception as ex:
         QtGui.QMessageBox.critical(dialog, "認証失敗", str(ex))
