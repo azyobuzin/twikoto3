@@ -1,5 +1,23 @@
 # -*- coding: utf-8 -*-
 
+"""
+    twikoto3 - Twitter Client
+    Copyright (C) 2012 azyobuzin
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
 #YacqOAuthから移植
 
 import base64
@@ -42,7 +60,7 @@ def nonce():
 
 def signparametersbase(realm, consumerkey, token, signaturemethod, timestamp, nonce, callback, verifier):
     dic = { "oauth_version": OAUTHVERSION }
-    
+
     if not realm | noneoremptystr(): dic["realm"] = realm
     if not consumerkey | noneoremptystr(): dic["oauth_consumer_key"] = consumerkey
     if not token | noneoremptystr(): dic["oauth_token"] = token
@@ -51,7 +69,7 @@ def signparametersbase(realm, consumerkey, token, signaturemethod, timestamp, no
     if not nonce | noneoremptystr(): dic["oauth_nonce"] = nonce
     if not callback | noneoremptystr(): dic["oauth_callback"] = callback
     if not verifier | noneoremptystr(): dic["oauth_verifier"] = verifier
-    
+
     return dic
 
 def signaturebase(httpmethod, uri, signparams, params):
