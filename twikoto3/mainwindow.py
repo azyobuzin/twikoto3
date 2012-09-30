@@ -21,6 +21,7 @@
 from PyQt4 import QtCore, QtGui
 import twikoto3
 from twikoto3.extension import *
+from twikoto3.twittertext import validator
 
 class MainWindow(QtGui.QMainWindow):
     def __init__(self, parent = None):
@@ -31,6 +32,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self.textedit_tweet = QtGui.QTextEdit()
         self.textedit_tweet.setMinimumHeight(46)
+        self.textedit_tweet.textChanged.connect(self.textedit_tweet_textChanged)
         self.layout.addWidget(self.textedit_tweet)
 
         self.layout_tweetbutton = QtGui.QHBoxLayout()
@@ -40,14 +42,14 @@ class MainWindow(QtGui.QMainWindow):
         self.layout_tweetbutton.addWidget(self.label_textcount)
 
         self.button_tweet = QtGui.QPushButton("Tweet")
-        self.button_tweet.clicked.connect(self.tweetbutton_clicked)
+        self.button_tweet.clicked.connect(self.button_tweet_clicked)
         self.layout_tweetbutton.addWidget(self.button_tweet)
 
         self.centralWidget = QtGui.QWidget()
         self.centralWidget.setLayout(self.layout)
         self.setCentralWidget(self.centralWidget)
 
-    def tweetbutton_clicked(self):
+    def button_tweet_clicked(self):
         status = self.textedit_tweet.toPlainText()
         if status | noneoremptystr():
             return
@@ -56,6 +58,9 @@ class MainWindow(QtGui.QMainWindow):
             self.textedit_tweet.setPlainText("")
         except Exception as ex:
             QtGui.QMessageBox.critical(self, "投稿失敗", str(ex))
+
+    def textedit_tweet_textChanged(self):
+        self.label_textcount.setText(str(validator.MAX_TWEET_LENGTH - validator.getTweetLength(self.textedit_tweet.toPlainText())))
 
     instance = None
     def getinstance():
