@@ -23,6 +23,17 @@ import twikoto3
 from twikoto3.extension import *
 from twikoto3.twittertext import validator
 
+class TweetTextEdit(QtGui.QTextEdit):
+    def __init__(self, parent = None):
+        super(TweetTextEdit, self).__init__(parent)
+        self.tweetaction = None
+
+    def keyPressEvent(self, e):
+        if e.key() == QtCore.Qt.Key_Return and (e.modifiers() and QtCore.Qt.ControlModifier):
+            self.tweetaction()
+        else:
+            super(TweetTextEdit, self).keyPressEvent(e)
+
 class MainWindow(QtGui.QMainWindow):
     def __init__(self, parent = None):
         super(MainWindow, self).__init__(parent)
@@ -30,9 +41,10 @@ class MainWindow(QtGui.QMainWindow):
 
         self.layout = QtGui.QVBoxLayout()
 
-        self.textedit_tweet = QtGui.QTextEdit()
+        self.textedit_tweet = TweetTextEdit()
         self.textedit_tweet.setMinimumHeight(46)
         self.textedit_tweet.textChanged.connect(self.textedit_tweet_textChanged)
+        self.textedit_tweet.tweetaction = self.button_tweet_clicked
         self.layout.addWidget(self.textedit_tweet)
 
         self.layout_tweetbutton = QtGui.QHBoxLayout()
