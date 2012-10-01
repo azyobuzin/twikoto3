@@ -61,7 +61,15 @@ class InputPinDialog(QtGui.QDialog):
         self.setWhatsThis("Twitterにログインして、ついこと 3 のアクセスを許可してください。")
 
 def authorize():
-    requesttoken = twikoto3.twitter.getrequesttoken()
+    thread = twikoto3.twitter.getrequesttoken()
+    thread.start()
+    thread.wait()
+
+    requesttoken = thread.response
+
+    twikoto3.twitter.oauthtoken = requesttoken.token
+    twikoto3.twitter.oauthtokensecret = requesttoken.secret
+
     dialog = InputPinDialog("https://api.twitter.com/oauth/authorize?oauth_token=" + requesttoken.token, inputedpin)
     dialog.show()
 
@@ -69,16 +77,28 @@ def inputedpin(dialog, verifier):
     if verifier | noneoremptystr():
         return
 
-    try:
-        accesstoken = twikoto3.twitter.getaccesstoken(verifier)
+    dialog.button_ok.setEnabled(False)
 
-        twikoto3.setting.oauthtoken = accesstoken.token
-        twikoto3.setting.oauthtokensecret = accesstoken.secret
-        twikoto3.setting.userid = accesstoken.userid
-        twikoto3.setting.screenname = accesstoken.screenname
-        twikoto3.setting.savesetting()
+    thread = twikoto3.twitter.getaccesstoken(verifier)
 
-        mainwindow.MainWindow.getinstance().show()
-        dialog.close()
-    except Exception as ex:
-        QtGui.QMessageBox.critical(dialog, "認証失敗", str(ex))
+    def finished():
+        if thread.response is not None:
+            accesstoken = thread.response
+
+            twikoto3.twitter.oauthtoken = accesstoken.token
+            twikoto3.twitter.oauthtokensecret = accesstoken.secret
+
+            twikoto3.setting.oauthtoken = accesstoken.token
+            twikoto3.setting.oauthtokensecret = accesstoken.secret
+            twikoto3.setting.userid = accesstoken.userid
+            twikoto3.setting.screenname = accesstoken.screenname
+            twikoto3.setting.savesetting()
+
+            mainwindow.MainWindow.getinstance().show()
+            dialog.close()
+        else:
+            dialog.button_ok.setEnabled(True)
+            QtGui.QMessageBox.critical(dialog, "認証失敗", str(ex))
+
+    thread.finished.connect(finished)
+    thread.start()

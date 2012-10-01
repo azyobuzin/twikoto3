@@ -18,8 +18,31 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import json
+import traceback
 import urllib.request
+from PyQt4 import QtCore
 from twikoto3 import oauth
+from twikoto3.twitter import twdatamodel
+
+class AsyncConnection(QtCore.QThread):
+    def __init__(self, action, parse, parent = None):
+        super(AsyncConnection, self).__init__(parent)
+        self.action = action
+        self.parse = parse
+        self.headers = None
+        self.response = None
+        self.exception = None
+
+    def run(self):
+        try:
+            res = self.action()
+            self.headers = dict(res.getheaders())
+            self.response = self.parse(res.read().decode("utf-8"))
+            res.close()
+        except Exception as ex:
+            traceback.print_exc()
+            self.exception = ex
 
 class Twitter:
     def __init__(self, consumerkey, consumersecret, oauthtoken, oauthtokensecret):
@@ -31,48 +54,34 @@ class Twitter:
     def addoauthheader(self, req, method, callback, verifier, params):
         req.add_header("Authorization", oauth.createauthorizationheader(method, req.full_url, None, self.consumerkey, self.consumersecret, self.oauthtoken, self.oauthtokensecret, oauth.HMACSHA1, callback, verifier, params))
 
+    def asyncmethod(parse):
+        def wrapped(func):
+            def wrappedwrapped(*args, **kwargs):
+                thread = AsyncConnection(lambda: func(*args, **kwargs), parse)
+                return thread
+
+            return wrappedwrapped
+        return wrapped
+
     #OAuth
+    @asyncmethod(twdatamodel.OAuthToken.parse)
     def getrequesttoken(self, callback = "oob"):
         req = urllib.request.Request("https://api.twitter.com/oauth/request_token")
         self.addoauthheader(req, "GET", callback, None, None)
-        token = OAuthToken.parse(urllib.request.urlopen(req).read().decode("utf-8"))
-        self.oauthtoken = token.token
-        self.oauthtokensecret = token.secret
-        return token
+        return urllib.request.urlopen(req)
 
+    @asyncmethod(twdatamodel.AccessToken.parse)
     def getaccesstoken(self, verifier):
         req = urllib.request.Request("https://api.twitter.com/oauth/access_token")
         self.addoauthheader(req, "GET", None, verifier, None)
-        token = AccessToken.parse(urllib.request.urlopen(req).read().decode("utf-8"))
-        self.oauthtoken = token.token
-        self.oauthtokensecret = token.secret
-        return token
+        return urllib.request.urlopen(req)
 
     #Tweets
+    @asyncmethod(json.loads)
     def updatestatus(self, status, inreplytostatusid = -1):
         params = { "status": status }
         if inreplytostatusid > -1:
             params["in_reply_to_status_id"] = str(inreplytostatusid)
         req = urllib.request.Request("https://api.twitter.com/1.1/statuses/update.json", data = oauth.towwwformurlencoded(params).encode("ascii"))
         self.addoauthheader(req, "POST", None, None, params)
-        urllib.request.urlopen(req).close()
-        #TODO:パース
-
-class OAuthToken:
-    def __init__(self, token, secret):
-        self.token = token
-        self.secret = secret
-
-    def parse(source):
-        dic = oauth.parsewwwformurlencoded(source)
-        return OAuthToken(dic["oauth_token"], dic["oauth_token_secret"])
-
-class AccessToken(OAuthToken):
-    def __init__(self, token, secret, userid, screenname):
-        super(AccessToken, self).__init__(token, secret)
-        self.userid = userid
-        self.screenname = screenname
-
-    def parse(source):
-        dic = oauth.parsewwwformurlencoded(source)
-        return AccessToken(dic["oauth_token"], dic["oauth_token_secret"], dic["user_id"], dic["screen_name"])
+        return urllib.request.urlopen(req)

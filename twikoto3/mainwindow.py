@@ -65,11 +65,19 @@ class MainWindow(QtGui.QMainWindow):
         status = self.textedit_tweet.toPlainText()
         if status | noneoremptystr():
             return
-        try:
-            twikoto3.twitter.updatestatus(status)
-            self.textedit_tweet.setPlainText("")
-        except Exception as ex:
-            QtGui.QMessageBox.critical(self, "投稿失敗", str(ex))
+
+        self.button_tweet.setEnabled(False)
+        thread = twikoto3.twitter.updatestatus(status)
+
+        def finished():
+            self.button_tweet.setEnabled(True)
+            if thread.response is not None:
+                self.textedit_tweet.setPlainText("")
+            else:
+                QtGui.QMessageBox.critical(self, "投稿失敗", str(thread.exception))
+
+        thread.finished.connect(finished)
+        thread.start()
 
     def textedit_tweet_textChanged(self):
         self.label_textcount.setText(str(validator.MAX_TWEET_LENGTH - validator.getTweetLength(self.textedit_tweet.toPlainText())))
